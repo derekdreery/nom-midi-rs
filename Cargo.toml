@@ -4,6 +4,9 @@ description = "Parse a simple midi file into data structures using nom"
 version = "0.1.0"
 authors = ["Richard Dodd <richard.o.dodd@gmail.com>"]
 license = "Apache-2.0/MIT"
+documentation = "https://docs.rs/nom-midi"
+homepage = "https://github.com/derekdreery/nom-midi-rs"
+repository = "https://github.com/derekdreery/nom-midi-rs"
 
 [features]
 default = []
@@ -11,4 +14,4 @@ default = []
 continuation_sysex = []
 
 [dependencies]
-nom = "*"
+nom = "^2.0.0"
