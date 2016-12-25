@@ -1,0 +1,14 @@
+[package]
+name = "nom-midi"
+description = "Parse a simple midi file into data structures using nom"
+version = "0.1.0"
+authors = ["Richard Dodd <richard.o.dodd@gmail.com>"]
+license = "Apache-2.0/MIT"
+
+[features]
+default = []
+# This is for continuation events (e.g. used by Casio). Currently unimplemented
+continuation_sysex = []
+
+[dependencies]
+nom = "*"
