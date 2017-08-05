@@ -98,7 +98,7 @@ impl Into<u8> for Fps {
 /// A track chunk (a collection of events)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Track {
-    events: Vec<Event>
+    pub events: Vec<Event>
 }
 
 // Events
@@ -107,8 +107,8 @@ pub struct Track {
 /// An event present in a track chunk
 #[derive(Debug, PartialEq, Clone)]
 pub struct Event {
-    delta_time: u32,
-    event: EventType
+    pub delta_time: u32,
+    pub event: EventType
 }
 
 /// The type of an event in a track chunk, along with event-specific data
@@ -343,12 +343,5 @@ impl KeySignature {
     /// The second value is not specified (could be anything) when the first is 0.
     pub fn for_display(&self) -> (u8, bool) {
         (self.count(), self.is_sharps_unchecked())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
     }
 }
