@@ -38,8 +38,8 @@ fn parse_division(i: &[u8]) -> IResult<&[u8], Division> {
         Division::Timecode { fps, res }
     } else {
         // we are using metrical timing
-        let (_, note_div) = try_parse!(&[bytes[0] & 0x7F, bytes[1]][..], be_u16);
-        Division::Metrical(note_div)
+        let (_, mut note_div) = try_parse!(bytes, be_u16);
+        Division::Metrical(note_div & 0x7FFF)
     };
     Ok((&i[2..], division))
 }

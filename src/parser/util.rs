@@ -105,7 +105,8 @@ fn test_var_length() {
     let length = [0x82, 0x80, 0x00];
     assert_eq!(parse_var_length(&length[..]), Ok((&b""[..], 0x8000)));
     let length = [0x82, 0x80, 0x80, 0x80];
-    assert_eq!(parse_var_length(&length[..]), Ok(ErrorKind::Custom(0)));
+    assert_eq!(parse_var_length(&length[..]),
+               Result::Err(Err::Error(Context::Code(&length[..], ErrorKind::Custom(0)))));
 }
 
 #[test]
