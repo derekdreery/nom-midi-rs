@@ -42,13 +42,13 @@ pub fn parse_midi_event(i: &[u8]) -> IResult<&[u8], MidiEvent> {
             let (i, msb) = try_parse!(i, be_u7);
             (i, PitchBend(lsb, msb))
         },
-        _ => { return IResult::Error(ErrorKind::Custom(0)) }
+        _ => { return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0)))) }
     };
-    IResult::Done(
+    Ok((
         i,
         MidiEvent {
             channel: code_chan & 0x0F,
             event: evt_type
         }
-    )
+    ))
 }
