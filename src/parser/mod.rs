@@ -20,9 +20,9 @@ pub fn parse_midi(i: &[u8]) -> IResult<&[u8], Midi> {
         i = i_after;
         tracks.push(track);
     }
-    IResult::Done(i, Midi {
+    Ok((i, Midi {
         header: header,
         tracks: tracks
-    })
+    }))
 }
 

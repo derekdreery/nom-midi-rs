@@ -32,19 +32,16 @@ fn parse_division(i: &[u8]) -> IResult<&[u8], Division> {
             0xE7 => Fps::TwentyFive,
             0xE3 => Fps::TwentyNine,
             0xE2 => Fps::Thirty,
-            _ => return IResult::Error(ErrorKind::Custom(0))
+            _ => return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0))))
         };
         let res = bytes[0] & 0x7F;
-        Division::Timecode {
-            fps: fps,
-            res: res
-        }
+        Division::Timecode { fps, res }
     } else {
         // we are using metrical timing
-        let (_, note_div) = try_parse!(&[bytes[0] & 0x7F, bytes[1]][..], be_u16);
-        Division::Metrical(note_div)
+        let (_, mut note_div) = try_parse!(bytes, be_u16);
+        Division::Metrical(note_div & 0x7FFF)
     };
-    IResult::Done(&i[2..], division)
+    Ok((&i[2..], division))
 }
 
 named!(pub parse_header_chunk<&[u8], MidiHeader>,
@@ -67,10 +64,10 @@ fn test_header_chunk() {
     let midi_file = [77u8, 84, 104, 100, 0, 0, 0, 6, 0, 1, 0, 5, 1, 0];
     assert_eq!(
         parse_header_chunk(&midi_file[..]),
-        IResult::Done(&b""[..], MidiHeader {
+        Ok((&b""[..], MidiHeader {
             format: MidiFormat::MultipleTrack(5),
-            division: Division::Metrical(256)
-        })
+            division: Division::Metrical(256),
+        }))
     );
 }
 

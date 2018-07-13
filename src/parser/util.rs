@@ -1,21 +1,25 @@
 use nom::{IResult, ErrorKind, Needed};
+use nom::Err;
+use nom::simple_errors::Context;
 
 macro_rules! with_restriction (
     // Internal parser, do not use directly
     (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
         {
             match $submac!($i, $($args)*) {
-                ::nom::IResult::Error(e)
-                    => ::nom::IResult::Error(e),
-                ::nom::IResult::Incomplete(::nom::Needed::Unknown)
-                    => ::nom::IResult::Incomplete(::nom::Needed::Unknown),
-                ::nom::IResult::Incomplete(::nom::Needed::Size(i))
-                    => ::nom::IResult::Incomplete(::nom::Needed::Size(i)),
-                ::nom::IResult::Done(i, o)
+                Err(::nom::Err::Error(e))
+                    => Err(::nom::Err::Error(e)),
+                Err(::nom::Err::Incomplete(::nom::Needed::Unknown))
+                    => Err(::nom::Err::Incomplete(::nom::Needed::Unknown)),
+                Err(::nom::Err::Incomplete(::nom::Needed::Size(i)))
+                    => Err(::nom::Err::Incomplete(::nom::Needed::Size(i))),
+                Err(::nom::Err::Failure(e))
+                    => Err(::nom::Err::Failure(e)),
+                Ok((i, o))
                     => if $submac2!(o, $($args2)*) {
-                        ::nom::IResult::Done(i, o)
+                        Ok((i, o))
                     } else {
-                        ::nom::IResult::Error(error_position!(::nom::ErrorKind::MapRes, $i))
+                        Err(::nom::Err::Error(error_position!($i, ::nom::ErrorKind::MapRes)))
                     }
             }
         }
@@ -37,13 +41,13 @@ macro_rules! with_restriction (
 /// Similar to `be_u8` from `nom`, but checks the most significant bit is 0
 pub fn be_u7(i: &[u8]) -> IResult<&[u8], u8> {
     if i.len() < 1 {
-        IResult::Incomplete(Needed::Size(1))
+        Result::Err(Err::Incomplete(Needed::Size(1)))
     } else {
         let val = i[0];
         if val > 127 {
-            IResult::Error(ErrorKind::Custom(0))
+            Result::Err(Err::Error(Context::Code(i, ErrorKind::Custom(0))))
         } else {
-            IResult::Done(&i[1..], val)
+            Ok((&i[1..], val))
         }
     }
 }
@@ -58,7 +62,7 @@ pub fn parse_var_length(i: &[u8]) -> IResult<&[u8], u32> {
     let mut value = 0u32;
 
     if i.len() == 0 {
-        return IResult::Incomplete(Needed::Unknown);
+        return Result::Err(Err::Incomplete(Needed::Unknown));
     }
 
     while i[pos] & 0x80 > 0 { // True if the highest bit is set
@@ -68,25 +72,26 @@ pub fn parse_var_length(i: &[u8]) -> IResult<&[u8], u32> {
 
         // If we can't fit the number in a u32, emit an error
         if pos >= 4 {
-            return IResult::Error(ErrorKind::Custom(0));
+            return Result::Err(Err::Error(error_position!(i, ErrorKind::Custom(0))));
         }
         // check we have enough bytes to continue
         if i.len() <= pos {
-            return IResult::Incomplete(Needed::Unknown);
+            return Result::Err(Err::Incomplete(Needed::Unknown));
         }
     }
 
     // add last bits
     value = (value << 7) | (i[pos] as u32); // No highest bit to mask on last number
-    IResult::Done(&i[pos+1..], value)
+    Ok((&i[pos+1..], value))
 }
 
 /// This function parses a var_length length value, followed by that many bytes
 pub fn parse_var_length_bytes(i: &[u8]) -> IResult<&[u8], &[u8]> {
     let (i, size) = match parse_var_length(i) {
-        IResult::Done(i, size) => (i, size),
-        IResult::Error(e) => { return IResult::Error(e) }
-        IResult::Incomplete(n) => { return IResult::Incomplete(n) }
+        Ok((i, size)) => (i, size),
+        Result::Err(Err::Error(e)) => { return Result::Err(Err::Error(e)) },
+        Result::Err(Err::Incomplete(n)) => { return Result::Err(Err::Incomplete(n)) },
+        Result::Err(Err::Failure(n)) => { return Result::Err(Err::Failure(n)) },
     };
     take!(i, size)
 }
@@ -94,17 +99,18 @@ pub fn parse_var_length_bytes(i: &[u8]) -> IResult<&[u8], &[u8]> {
 #[test]
 fn test_var_length() {
     let length = [0x7F];
-    assert_eq!(parse_var_length(&length[..]), IResult::Done(&b""[..], 0x7F));
+    assert_eq!(parse_var_length(&length[..]), Ok((&b""[..], 0x7F)));
     let length = [0x81, 0x7F];
-    assert_eq!(parse_var_length(&length[..]), IResult::Done(&b""[..], 0xFF));
+    assert_eq!(parse_var_length(&length[..]), Ok((&b""[..], 0xFF)));
     let length = [0x82, 0x80, 0x00];
-    assert_eq!(parse_var_length(&length[..]), IResult::Done(&b""[..], 0x8000));
+    assert_eq!(parse_var_length(&length[..]), Ok((&b""[..], 0x8000)));
     let length = [0x82, 0x80, 0x80, 0x80];
-    assert_eq!(parse_var_length(&length[..]), IResult::Error(ErrorKind::Custom(0)));
+    assert_eq!(parse_var_length(&length[..]),
+               Result::Err(Err::Error(Context::Code(&length[..], ErrorKind::Custom(0)))));
 }
 
 #[test]
 fn test_data_bytes() {
     let data = [0x04, b'c', b'h', b'a', b'r', b's'];
-    assert_eq!(parse_var_length_bytes(&data[..]), IResult::Done(&b"s"[..], &b"char"[..]));
+    assert_eq!(parse_var_length_bytes(&data[..]), Ok((&b"s"[..], &b"char"[..])));
 }

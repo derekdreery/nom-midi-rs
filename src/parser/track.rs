@@ -20,6 +20,6 @@ pub fn parse_track_chunk(i: &[u8]) -> IResult<&[u8], Track> {
         data = data_after;
         events.push(evt);
     }
-    IResult::Done(i, Track { events: events })
+    Ok((i, Track { events: events }))
 }
 

@@ -76,7 +76,7 @@ pub fn parse_meta_event(i: &[u8]) -> IResult<&[u8], MetaEvent> {
                 0x40 => Fps::TwentyFive,
                 0x80 => Fps::TwentyNine,
                 0xC0 => Fps::Thirty,
-                _ => { return IResult::Error(ErrorKind::Custom(0)) }
+                _ => { return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0)))) }
             };
             SMPTEOffset(SMPTEOffsetStruct {
                 fps: fps,
@@ -101,11 +101,11 @@ pub fn parse_meta_event(i: &[u8]) -> IResult<&[u8], MetaEvent> {
             let (_, major) = try_parse!(data, be_u8);
             match parse_to_key(sharps, major) {
                 Some(a) => KeySignature(a),
-                None => { return IResult::Error(ErrorKind::Custom(0)) }
+                None => { return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0)))) }
             }
         },
         0x7F => SequencerSpecificEvent(From::from(data)),
         other => Unknown(other, From::from(data))
     };
-    IResult::Done(i, evt)
+    Ok((i, evt))
 }
