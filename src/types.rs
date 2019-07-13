@@ -1,10 +1,10 @@
 mod note;
-pub use self::note::Note;
+pub use note::Note;
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Midi {
+pub struct SimpleMidiFile<'src> {
     pub header: MidiHeader,
-    pub tracks: Vec<Track>,
+    pub tracks: Vec<Track<'src>>,
 }
 
 // header
@@ -90,8 +90,8 @@ impl Into<u8> for Fps {
 
 /// A track chunk (a collection of events)
 #[derive(Debug, PartialEq, Clone)]
-pub struct Track {
-    pub events: Vec<Event>,
+pub struct Track<'src> {
+    pub events: Vec<Event<'src>>,
 }
 
 // Events
@@ -99,18 +99,18 @@ pub struct Track {
 
 /// An event present in a track chunk
 #[derive(Debug, PartialEq, Clone)]
-pub struct Event {
+pub struct Event<'src> {
     pub delta_time: u32,
-    pub event: EventType,
+    pub event: EventType<'src>,
 }
 
 /// The type of an event in a track chunk, along with event-specific data
 #[derive(Debug, PartialEq, Clone)]
-pub enum EventType {
+pub enum EventType<'src> {
     Midi(MidiEvent),
-    SystemExclusive(SystemExclusiveEvent),
-    EscapeSequence(EscapeSequence),
-    Meta(MetaEvent),
+    SystemExclusive(SystemExclusiveEvent<'src>),
+    EscapeSequence(EscapeSequence<'src>),
+    Meta(MetaEvent<'src>),
 }
 
 // Midi Events
@@ -169,45 +169,45 @@ pub enum MidiEventType {
 
 /// A system exclusive message
 #[derive(Debug, PartialEq, Clone)]
-pub struct SystemExclusiveEvent(pub Vec<u8>);
+pub struct SystemExclusiveEvent<'src>(pub &'src [u8]);
 
 /// An escape sequence (something not possible to include elsewhere)
 #[derive(Debug, PartialEq, Clone)]
-pub struct EscapeSequence(pub Vec<u8>);
+pub struct EscapeSequence<'src>(pub &'src [u8]);
 
 // Meta Events
 // ===========
 
 /// A special non-MIDI event
 #[derive(Debug, PartialEq, Clone)]
-pub enum MetaEvent {
+pub enum MetaEvent<'src> {
     /// The sequence number (as would be used in a MIDI Cue message)
     SequenceNumber(u16),
     /// Free text, can include comments and other useful information, if that information
     /// doesn't naturally fit in another text-based field
-    Text(String),
+    Text(&'src [u8]),
     /// A copyright notice
-    Copyright(String),
+    Copyright(&'src [u8]),
     /// The name of the current sequence or track (depending on context)
-    SequenceOrTrackName(String),
+    SequenceOrTrackName(&'src [u8]),
     /// The name of the current track
     //TrackName(String),
     /// The name of the instrument for this track (e.g. "Flute", "Piano", "Tenor", etc.)
-    InstrumentName(String),
+    InstrumentName(&'src [u8]),
     /// A syllable or set of syllables to be sung as part of a vocal track.
-    Lyric(String),
+    Lyric(&'src [u8]),
     /// A useful position-dependent note in the music (e.g. rehersal mark "A", loop point,
     /// section name)
-    Marker(String),
+    Marker(&'src [u8]),
     /// A marker to indicate this event should be synchronized with some non-midi event, e.g. "car
     /// crash on screen", "actors leave stage", etc.
-    CuePoint(String),
+    CuePoint(&'src [u8]),
     /// Indicates what patch or program name should be used by the immediately subsequent Bank
     /// Select and Program Change messages.
-    ProgramName(String),
+    ProgramName(&'src [u8]),
     /// The name of the hardware device used to produce sounds for this track. Might be inserted
     /// for example if using a branded synth or keyboard to generate midi events.
-    DeviceName(String),
+    DeviceName(&'src [u8]),
     /// Indicate which channel subsequent SysEx and Meta events apply to. Lasts until the next
     /// event of this type, or a normal MIDI event
     MidiChannelPrefix(u8), // actually u4
@@ -226,9 +226,9 @@ pub enum MetaEvent {
     /// Set the key signature. The default is C major.
     KeySignature(KeySignature),
     /// Vendor specific events. I don't try to parse them - just return the data
-    SequencerSpecificEvent(Vec<u8>),
+    SequencerSpecificEvent(&'src [u8]),
     /// An unrecognised event. To be future-compatible, just ignore these
-    Unknown(u8, Vec<u8>),
+    Unknown(u8, &'src [u8]),
 }
 
 /// I don't understand this, but I should be decoding it correctly for those that do

@@ -2,13 +2,17 @@ pub mod meta;
 pub mod midi;
 pub mod sysex;
 
-use {Event, EventType};
+use crate::types::{Event, EventType};
 
-use self::meta::parse_meta_event;
-use self::midi::parse_midi_event;
-use self::sysex::{parse_escape_sequence, parse_sysex_message};
+use self::{
+    meta::parse_meta_event,
+    midi::parse_midi_event,
+    sysex::{parse_escape_sequence, parse_sysex_message},
+};
 use super::util::parse_var_length;
+use nom::IResult;
 
+/*
 named!(pub parse_event<Event>,
     do_parse!(
         delta_time: parse_var_length >>
@@ -24,3 +28,22 @@ named!(pub parse_event<Event>,
         })
     )
 );
+*/
+
+pub fn parse_event(i: &[u8]) -> IResult<&[u8], Event> {
+    use nom::{branch::alt, combinator::map};
+    let (i, delta_time) = parse_var_length(i)?;
+    let (i, event) = alt((
+        map(parse_midi_event, EventType::Midi),
+        map(parse_sysex_message, EventType::SystemExclusive),
+        map(parse_escape_sequence, EventType::EscapeSequence),
+        map(parse_meta_event, EventType::Meta),
+    ))(i)?;
+    Ok((
+        i,
+        Event {
+            delta_time: delta_time,
+            event: event,
+        },
+    ))
+}

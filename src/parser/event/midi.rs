@@ -1,48 +1,56 @@
 //! Midi events
 
-use super::super::util::be_u7;
-use nom::*;
-use MidiEvent;
+use crate::{
+    parser::util::be_u7,
+    types::{MidiEvent, MidiEventType},
+};
+use nom::{
+    error::{make_error, ErrorKind},
+    Err, IResult,
+};
 
 pub fn parse_midi_event(i: &[u8]) -> IResult<&[u8], MidiEvent> {
-    use MidiEventType::*;
+    use nom::number::streaming::be_u8;
 
-    let (i, code_chan) = try_parse!(i, be_u8);
+    let (i, code_chan) = be_u8(i)?;
     let (i, evt_type) = match code_chan >> 4 {
         0x8 => {
-            let (i, note_code) = try_parse!(i, be_u7);
-            let (i, velocity) = try_parse!(i, be_u7);
-            (i, NoteOff(From::from(note_code), velocity))
+            let (i, note_code) = be_u7(i)?;
+            let (i, velocity) = be_u7(i)?;
+            (i, MidiEventType::NoteOff(note_code.into(), velocity))
         }
         0x9 => {
-            let (i, note_code) = try_parse!(i, be_u7);
-            let (i, velocity) = try_parse!(i, be_u7);
-            (i, NoteOn(From::from(note_code), velocity))
+            let (i, note_code) = be_u7(i)?;
+            let (i, velocity) = be_u7(i)?;
+            (i, MidiEventType::NoteOn(note_code.into(), velocity))
         }
         0xA => {
-            let (i, note_code) = try_parse!(i, be_u7);
-            let (i, pressure) = try_parse!(i, be_u7);
-            (i, PolyphonicPressure(From::from(note_code), pressure))
+            let (i, note_code) = be_u7(i)?;
+            let (i, pressure) = be_u7(i)?;
+            (
+                i,
+                MidiEventType::PolyphonicPressure(note_code.into(), pressure),
+            )
         }
         0xB => {
-            let (i, controller) = try_parse!(i, be_u7);
-            let (i, value) = try_parse!(i, be_u7);
-            (i, Controller(controller, value))
+            let (i, controller) = be_u7(i)?;
+            let (i, value) = be_u7(i)?;
+            (i, MidiEventType::Controller(controller, value))
         }
         0xC => {
-            let (i, program) = try_parse!(i, be_u7);
-            (i, ProgramChange(program))
+            let (i, program) = be_u7(i)?;
+            (i, MidiEventType::ProgramChange(program))
         }
         0xD => {
-            let (i, pressure) = try_parse!(i, be_u7);
-            (i, ChannelPressure(pressure))
+            let (i, pressure) = be_u7(i)?;
+            (i, MidiEventType::ChannelPressure(pressure))
         }
         0xE => {
-            let (i, lsb) = try_parse!(i, be_u7);
-            let (i, msb) = try_parse!(i, be_u7);
-            (i, PitchBend(lsb, msb))
+            let (i, lsb) = be_u7(i)?;
+            let (i, msb) = be_u7(i)?;
+            (i, MidiEventType::PitchBend(lsb, msb))
         }
-        _ => return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0)))),
+        _ => return Err(Err::Error(make_error(i, ErrorKind::Digit))),
     };
     Ok((
         i,

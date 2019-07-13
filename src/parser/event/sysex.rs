@@ -1,20 +1,19 @@
 //! System exclusive events
 
-use super::super::util::parse_var_length_bytes;
-use {EscapeSequence, SystemExclusiveEvent};
+use crate::parser::util::parse_var_length_bytes;
+use crate::types::{EscapeSequence, SystemExclusiveEvent};
+use nom::IResult;
 
-named!(pub parse_sysex_message<&[u8], SystemExclusiveEvent>,
-    do_parse!(
-        tag!([0xF0]) >>
-        data: parse_var_length_bytes >>
-        (SystemExclusiveEvent(From::from(data)))
-    )
-);
+pub fn parse_sysex_message(i: &[u8]) -> IResult<&[u8], SystemExclusiveEvent> {
+    use nom::bytes::streaming::tag;
+    let (i, _) = tag([0xF0])(i)?;
+    let (i, data) = parse_var_length_bytes(i)?;
+    Ok((i, SystemExclusiveEvent(data)))
+}
 
-named!(pub parse_escape_sequence<&[u8], EscapeSequence>,
-    do_parse!(
-        tag!([0xF7]) >>
-        data: parse_var_length_bytes >>
-        (EscapeSequence(From::from(data)))
-    )
-);
+pub fn parse_escape_sequence(i: &[u8]) -> IResult<&[u8], EscapeSequence> {
+    use nom::bytes::streaming::tag;
+    let (i, _) = tag([0xF7])(i)?;
+    let (i, data) = parse_var_length_bytes(i)?;
+    Ok((i, EscapeSequence(data)))
+}

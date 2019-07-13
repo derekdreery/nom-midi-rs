@@ -1,26 +1,25 @@
-#[macro_use]
-pub mod util;
 pub mod event;
 pub mod header;
 pub mod track;
+pub mod util;
 
 use nom::IResult;
 
-use self::header::parse_header_chunk;
-use self::track::parse_track_chunk;
-use Midi;
+use crate::types::SimpleMidiFile;
+use header::parse_header_chunk;
+use track::parse_track_chunk;
 
-pub fn parse_midi(i: &[u8]) -> IResult<&[u8], Midi> {
-    let (mut i, header) = try_parse!(i, parse_header_chunk);
+pub fn parse_smf(i: &[u8]) -> IResult<&[u8], SimpleMidiFile> {
+    let (mut i, header) = parse_header_chunk(i)?;
     let mut tracks = vec![];
     for _ in 0..(header.format.count()) {
-        let (i_after, track) = try_parse!(i, parse_track_chunk);
+        let (i_after, track) = parse_track_chunk(i)?;
         i = i_after;
         tracks.push(track);
     }
     Ok((
         i,
-        Midi {
+        SimpleMidiFile {
             header: header,
             tracks: tracks,
         },
