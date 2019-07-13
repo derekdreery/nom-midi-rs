@@ -1,10 +1,10 @@
-pub mod meta;
-pub mod midi;
-pub mod sysex;
+mod meta;
+mod midi;
+mod sysex;
 
 use crate::types::{Event, EventType};
 
-use self::{
+pub use self::{
     meta::parse_meta_event,
     midi::parse_midi_event,
     sysex::{parse_escape_sequence, parse_sysex_message},

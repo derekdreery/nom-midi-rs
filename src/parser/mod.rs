@@ -1,13 +1,14 @@
-pub mod event;
-pub mod header;
-pub mod track;
-pub mod util;
+mod event;
+mod header;
+mod track;
+mod util;
 
-use nom::IResult;
+pub use event::*;
+pub use header::*;
+pub use track::*;
 
 use crate::types::SimpleMidiFile;
-use header::parse_header_chunk;
-use track::parse_track_chunk;
+use nom::IResult;
 
 pub fn parse_smf(i: &[u8]) -> IResult<&[u8], SimpleMidiFile> {
     let (mut i, header) = parse_header_chunk(i)?;
