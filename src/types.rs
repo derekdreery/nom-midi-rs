@@ -169,11 +169,11 @@ pub enum MidiEventType {
 
 /// A system exclusive message
 #[derive(Debug, PartialEq, Clone)]
-pub struct SystemExclusiveEvent(Vec<u8>);
+pub struct SystemExclusiveEvent(pub Vec<u8>);
 
 /// An escape sequence (something not possible to include elsewhere)
 #[derive(Debug, PartialEq, Clone)]
-pub struct EscapeSequence(Vec<u8>);
+pub struct EscapeSequence(pub Vec<u8>);
 
 // Meta Events
 // ===========
