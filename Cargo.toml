@@ -7,6 +7,7 @@ license = "Apache-2.0/MIT"
 documentation = "https://docs.rs/nom-midi"
 homepage = "https://github.com/derekdreery/nom-midi-rs"
 repository = "https://github.com/derekdreery/nom-midi-rs"
+edition = "2018"
 
 [features]
 default = []
