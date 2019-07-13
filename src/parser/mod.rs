@@ -1,16 +1,14 @@
-
 #[macro_use]
 pub mod util;
+pub mod event;
 pub mod header;
 pub mod track;
-pub mod event;
 
 use nom::IResult;
 
-use {Midi};
 use self::header::parse_header_chunk;
 use self::track::parse_track_chunk;
-
+use Midi;
 
 pub fn parse_midi(i: &[u8]) -> IResult<&[u8], Midi> {
     let (mut i, header) = try_parse!(i, parse_header_chunk);
@@ -20,9 +18,11 @@ pub fn parse_midi(i: &[u8]) -> IResult<&[u8], Midi> {
         i = i_after;
         tracks.push(track);
     }
-    Ok((i, Midi {
-        header: header,
-        tracks: tracks
-    }))
+    Ok((
+        i,
+        Midi {
+            header: header,
+            tracks: tracks,
+        },
+    ))
 }
-

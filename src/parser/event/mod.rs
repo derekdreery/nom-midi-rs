@@ -1,12 +1,12 @@
 pub mod meta;
-pub mod sysex;
 pub mod midi;
+pub mod sysex;
 
 use {Event, EventType};
 
-use self::midi::parse_midi_event;
-use self::sysex::{parse_sysex_message, parse_escape_sequence};
 use self::meta::parse_meta_event;
+use self::midi::parse_midi_event;
+use self::sysex::{parse_escape_sequence, parse_sysex_message};
 use super::util::parse_var_length;
 
 named!(pub parse_event<Event>,

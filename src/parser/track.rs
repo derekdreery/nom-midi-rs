@@ -1,15 +1,11 @@
 use nom::*;
 
-use {Track};
 use super::event::parse_event;
+use Track;
 
-named!(parse_track_chunk_header,
-    do_parse!(
-        tag!(b"MTrk") >>
-        length: be_u32 >>
-        content: take!(length) >>
-        (content)
-    )
+named!(
+    parse_track_chunk_header,
+    do_parse!(tag!(b"MTrk") >> length: be_u32 >> content: take!(length) >> (content))
 );
 
 pub fn parse_track_chunk(i: &[u8]) -> IResult<&[u8], Track> {
@@ -22,4 +18,3 @@ pub fn parse_track_chunk(i: &[u8]) -> IResult<&[u8], Track> {
     }
     Ok((i, Track { events: events }))
 }
-

@@ -145,17 +145,13 @@ pub enum Note {
     E9 = 0x7C,
     F9 = 0x7D,
     Fs9 = 0x7E,
-    G9 = 0x7F
+    G9 = 0x7F,
 }
 
 impl From<u8> for Note {
     #[inline(always)]
     fn from(n: u8) -> Note {
-        // Could alternatively mask with 0x7F to remove top bit (is this better?)
-        if n > 0x7F {
-            panic!("Not valid note");
-        }
-        unsafe { mem::transmute(n) }
+        unsafe { mem::transmute(n & 0x7f) }
     }
 }
 
@@ -169,19 +165,13 @@ impl Into<u8> for Note {
 impl From<i8> for Note {
     #[inline(always)]
     fn from(n: i8) -> Note {
-        // Could alternatively mask with 0x7F to remove top bit (is this better?)
-        if n < 0x00 {
-            panic!("Not valid note");
-        }
-        unsafe { mem::transmute(n) }
+        unsafe { mem::transmute(n & 0x7f) }
     }
 }
 
 impl Into<i8> for Note {
     #[inline(always)]
     fn into(self) -> i8 {
-        // may be faster to use mem::transmute
         self as i8
     }
 }
-

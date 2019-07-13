@@ -1,22 +1,21 @@
-use super::super::{MidiHeader, MidiFormat, Division, Fps};
+use super::super::{Division, Fps, MidiFormat, MidiHeader};
 use nom::*;
 
-named!(parse_format<MidiFormat>,
+named!(
+    parse_format<MidiFormat>,
     alt!(
         do_parse!(
-            with_restriction!(be_u16, |v| v == 0) >>
-            with_restriction!(be_u16, |c| c == 1) >>
-            (MidiFormat::SingleTrack)
-        )
-        | do_parse!(
-            with_restriction!(be_u16, |v| v == 1) >>
-            no_tracks: be_u16 >>
-            (MidiFormat::MultipleTrack(no_tracks))
-        )
-        | do_parse!(
-            with_restriction!(be_u16, |v| v == 2) >>
-            no_tracks: be_u16 >>
-            (MidiFormat::MultipleSong(no_tracks))
+            with_restriction!(be_u16, |v| v == 0)
+                >> with_restriction!(be_u16, |c| c == 1)
+                >> (MidiFormat::SingleTrack)
+        ) | do_parse!(
+            with_restriction!(be_u16, |v| v == 1)
+                >> no_tracks: be_u16
+                >> (MidiFormat::MultipleTrack(no_tracks))
+        ) | do_parse!(
+            with_restriction!(be_u16, |v| v == 2)
+                >> no_tracks: be_u16
+                >> (MidiFormat::MultipleSong(no_tracks))
         )
     )
 );
@@ -32,7 +31,7 @@ fn parse_division(i: &[u8]) -> IResult<&[u8], Division> {
             0xE7 => Fps::TwentyFive,
             0xE3 => Fps::TwentyNine,
             0xE2 => Fps::Thirty,
-            _ => return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0))))
+            _ => return Err(::nom::Err::Error(error_position!(i, ErrorKind::Custom(0)))),
         };
         let res = bytes[0] & 0x7F;
         Division::Timecode { fps, res }
@@ -64,10 +63,12 @@ fn test_header_chunk() {
     let midi_file = [77u8, 84, 104, 100, 0, 0, 0, 6, 0, 1, 0, 5, 1, 0];
     assert_eq!(
         parse_header_chunk(&midi_file[..]),
-        Ok((&b""[..], MidiHeader {
-            format: MidiFormat::MultipleTrack(5),
-            division: Division::Metrical(256),
-        }))
+        Ok((
+            &b""[..],
+            MidiHeader {
+                format: MidiFormat::MultipleTrack(5),
+                division: Division::Metrical(256),
+            }
+        ))
     );
 }
-

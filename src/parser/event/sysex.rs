@@ -1,7 +1,7 @@
 //! System exclusive events
 
-use {SystemExclusiveEvent, EscapeSequence};
 use super::super::util::parse_var_length_bytes;
+use {EscapeSequence, SystemExclusiveEvent};
 
 named!(pub parse_sysex_message<&[u8], SystemExclusiveEvent>,
     do_parse!(
@@ -18,5 +18,3 @@ named!(pub parse_escape_sequence<&[u8], EscapeSequence>,
         (EscapeSequence(From::from(data)))
     )
 );
-
-

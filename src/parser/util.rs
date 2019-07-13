@@ -1,6 +1,6 @@
-use nom::{IResult, ErrorKind, Needed};
-use nom::Err;
 use nom::simple_errors::Context;
+use nom::Err;
+use nom::{ErrorKind, IResult, Needed};
 
 macro_rules! with_restriction (
     // Internal parser, do not use directly
@@ -65,7 +65,8 @@ pub fn parse_var_length(i: &[u8]) -> IResult<&[u8], u32> {
         return Result::Err(Err::Incomplete(Needed::Unknown));
     }
 
-    while i[pos] & 0x80 > 0 { // True if the highest bit is set
+    while i[pos] & 0x80 > 0 {
+        // True if the highest bit is set
         // shift existing bits and add any new bits (masking highest bit)
         value = (value << 7) | (i[pos] as u32) & 0x7F;
         pos = pos + 1;
@@ -82,16 +83,16 @@ pub fn parse_var_length(i: &[u8]) -> IResult<&[u8], u32> {
 
     // add last bits
     value = (value << 7) | (i[pos] as u32); // No highest bit to mask on last number
-    Ok((&i[pos+1..], value))
+    Ok((&i[pos + 1..], value))
 }
 
 /// This function parses a var_length length value, followed by that many bytes
 pub fn parse_var_length_bytes(i: &[u8]) -> IResult<&[u8], &[u8]> {
     let (i, size) = match parse_var_length(i) {
         Ok((i, size)) => (i, size),
-        Result::Err(Err::Error(e)) => { return Result::Err(Err::Error(e)) },
-        Result::Err(Err::Incomplete(n)) => { return Result::Err(Err::Incomplete(n)) },
-        Result::Err(Err::Failure(n)) => { return Result::Err(Err::Failure(n)) },
+        Result::Err(Err::Error(e)) => return Result::Err(Err::Error(e)),
+        Result::Err(Err::Incomplete(n)) => return Result::Err(Err::Incomplete(n)),
+        Result::Err(Err::Failure(n)) => return Result::Err(Err::Failure(n)),
     };
     take!(i, size)
 }
@@ -105,12 +106,17 @@ fn test_var_length() {
     let length = [0x82, 0x80, 0x00];
     assert_eq!(parse_var_length(&length[..]), Ok((&b""[..], 0x8000)));
     let length = [0x82, 0x80, 0x80, 0x80];
-    assert_eq!(parse_var_length(&length[..]),
-               Result::Err(Err::Error(Context::Code(&length[..], ErrorKind::Custom(0)))));
+    assert_eq!(
+        parse_var_length(&length[..]),
+        Result::Err(Err::Error(Context::Code(&length[..], ErrorKind::Custom(0))))
+    );
 }
 
 #[test]
 fn test_data_bytes() {
     let data = [0x04, b'c', b'h', b'a', b'r', b's'];
-    assert_eq!(parse_var_length_bytes(&data[..]), Ok((&b"s"[..], &b"char"[..])));
+    assert_eq!(
+        parse_var_length_bytes(&data[..]),
+        Ok((&b"s"[..], &b"char"[..]))
+    );
 }
