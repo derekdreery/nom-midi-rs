@@ -155,10 +155,10 @@ impl From<u8> for Note {
     }
 }
 
-impl Into<u8> for Note {
+impl From<Note> for u8 {
     #[inline(always)]
-    fn into(self) -> u8 {
-        self as u8
+    fn from(note: Note) -> u8 {
+        note as u8
     }
 }
 
@@ -169,9 +169,15 @@ impl From<i8> for Note {
     }
 }
 
-impl Into<i8> for Note {
+impl From<Note> for i8 {
     #[inline(always)]
-    fn into(self) -> i8 {
-        self as i8
+    fn from(note: Note) -> Self {
+        note as i8
+    }
+}
+
+impl From<Note> for usize {
+    fn from(note: Note) -> Self {
+        (note as u8) as usize
     }
 }
